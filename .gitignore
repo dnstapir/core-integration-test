@@ -1,0 +1,9 @@
+# Local stuff
+WORK/
+
+# Python stuff
+__pycache__/
+
+# Vim stuff
+*.swp
+*.swo
