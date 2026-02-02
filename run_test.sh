@@ -1,9 +1,7 @@
 #!/bin/bash
 
 echo "### Setting up tests..."
-mkdir -p WORK
-touch WORK/dummy
-echo "### Done setting up tests!"
+docker compose -f sut/docker-compose.yaml up
 
 echo "### Running tests..."
 pytest

@@ -1,0 +1,61 @@
+networks:
+  core:
+    driver: bridge
+
+services:
+  nats:
+    image: nats:alpine3.22
+    working_dir: /work
+    restart: no
+    command: "--config nats.conf"
+    ports:
+      - "127.0.0.1:4222:4222/tcp"
+    volumes:
+      - ./nats/:/work:ro
+    networks:
+      - core
+    healthcheck:
+      test: ["CMD-SHELL", "busybox wget http://127.0.0.1:8222/healthz -O - | grep \"ok\""]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+
+  observation-encoder:
+    image: ${TAPIR_INTEGRATION_OBSERVATION_ENCODER_IMG:-ghcr.io/dnstapir/observation-encoder:latest}
+    working_dir: /work
+    restart: no
+    depends_on:
+      nats:
+        condition: service_healthy
+    volumes:
+      - ./observation-encoder/:/work:ro
+    networks:
+      - core
+
+  tapir-analyse-looptest:
+    image: ${TAPIR_INTEGRATION_LOOPTEST_IMG:-ghcr.io/dnstapir/tapir-analyse-looptest:latest}
+    working_dir: /work
+    restart: no
+    depends_on:
+      nats:
+        condition: service_healthy
+      observation-encoder:
+        condition: service_started
+    volumes:
+      - ./tapir-analyse-looptest/:/work:ro
+    networks:
+      - core
+
+  tapir-analyse-new-qname:
+    image: ${TAPIR_INTEGRATION_NEW_QNAME_IMG:-ghcr.io/dnstapir/tapir-analyse-new-qname:latest}
+    working_dir: /work
+    restart: no
+    depends_on:
+      nats:
+        condition: service_healthy
+      observation-encoder:
+        condition: service_started
+    volumes:
+      - ./tapir-analyse-new-qname/:/work:ro
+    networks:
+      - core

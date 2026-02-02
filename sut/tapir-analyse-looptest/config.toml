@@ -1,0 +1,22 @@
+debug = true
+interval = 0
+looptest_match_suffix = "from-edge.looptest.dnstapir.se"
+
+[nats]
+url = "nats://nats:4222"
+event_subject = "core-integration-test.events.new_qname"
+observation_subject_prefix = "core-integration-test.observations"
+looptest_bucket = "looptest"
+
+[cert]
+active = false
+interval = 0
+cert_dir = "/unused"
+
+[api]
+active = false
+address = "127.0.0.1"
+port = "10001"
+
+[libtapir]
+debug = true

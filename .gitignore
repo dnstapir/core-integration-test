@@ -3,6 +3,9 @@ WORK/
 
 # Python stuff
 __pycache__/
+.pytest_cache/
+.venv/
+venv/
 
 # Vim stuff
 *.swp

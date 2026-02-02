@@ -1,0 +1,27 @@
+debug = true
+
+[nats]
+url = "nats://nats:4222"
+subject_southbound = "core-integration-test.out"
+observation_subject_prefix = "core-integration-test.observations"
+
+[[nats.buckets]]
+name = "globally_new"
+ttl = 10
+
+[[nats.buckets]]
+name = "looptest"
+ttl = 5
+
+[cert]
+active = false
+interval = 0
+cert_dir = "/unused"
+
+[api]
+active = false
+address = "127.0.0.1"
+port = "10001"
+
+[libtapir]
+debug = true
