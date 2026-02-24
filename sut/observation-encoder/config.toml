@@ -1,4 +1,5 @@
 debug = true
+ttl_margin = 7
 
 [nats]
 url = "nats://nats:4222"
