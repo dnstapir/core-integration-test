@@ -8,11 +8,6 @@ event_subject = "core-integration-test.events.new_qname"
 observation_subject_prefix = "core-integration-test.observations"
 looptest_bucket = "looptest"
 
-[cert]
-active = false
-interval = 0
-cert_dir = "/unused"
-
 [api]
 active = false
 address = "127.0.0.1"

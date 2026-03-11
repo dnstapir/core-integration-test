@@ -11,11 +11,6 @@ globally_new_bucket = "globally_new"
 private_bucket = "tapir-analyse-new-qname"
 seen_domains_bucket = "seen_domains"
 
-[cert]
-active = false
-interval = 0
-cert_dir = "/unused"
-
 [api]
 active = false
 address = "127.0.0.1"

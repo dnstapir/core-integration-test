@@ -14,11 +14,6 @@ ttl = 10
 name = "looptest"
 ttl = 5
 
-[cert]
-active = false
-interval = 0
-cert_dir = "/unused"
-
 [api]
 active = false
 address = "127.0.0.1"
