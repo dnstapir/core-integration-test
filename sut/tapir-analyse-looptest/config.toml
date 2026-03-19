@@ -1,6 +1,6 @@
 debug = true
 interval = 0
-looptest_match_suffix = "from-edge.looptest.dnstapir.se"
+looptest_match_suffix = "from-edge.looptest.dnstapir.se."
 
 [nats]
 url = "nats://nats:4222"
