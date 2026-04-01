@@ -1,20 +1,23 @@
 debug = true
-ignore_suffixes = ["a.from-edge.looptest.dnstapir.se.", "b.from-edge.looptest.dnstapir.se"]
+ignore_suffixes = ["looptest.dnstapir.se"]
 
 [nats]
+debug = true
 url = "nats://nats:4222"
 event_subject = "core-integration-test.events.new_qname"
 observation_subject_prefix = "core-integration-test.observations"
 private_subject_prefix = "core-integration-test.scratchpad"
 seen_domains_subject_prefix = "core-integration-test.internal.seen-domains"
-globally_new_bucket = "globally_new"
-private_bucket = "tapir-analyse-new-qname"
-seen_domains_bucket = "seen_domains"
+
+[[nats.observation_buckets]]
+observation = "globally_new"
+name = "globally_new"
+create = false
+ttl = 10
+
+[nats.seen_domains_bucket]
+name = "seen_domains"
+create = true
 
 [api]
 active = false
-address = "127.0.0.1"
-port = "10001"
-
-[libtapir]
-debug = true
