@@ -11,8 +11,8 @@ observation_subject_prefix = "core-integration-test.observations"
 [[nats.observation_buckets]]
 name = "looptest"
 observation = "looptest"
+ttl = 10
+create = false
 
 [api]
 active = false
-address = "127.0.0.1"
-port = "10001"
