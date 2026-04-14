@@ -59,3 +59,17 @@ services:
       - ./tapir-analyse-new-qname/:/work:ro
     networks:
       - core
+
+  tapir-analyse-listchecker:
+    image: ${TAPIR_INTEGRATION_LISTCHECKER_IMG:-ghcr.io/dnstapir/tapir-analyse-listchecker:latest}
+    working_dir: /work
+    restart: no
+    depends_on:
+      nats:
+        condition: service_healthy
+      observation-encoder:
+        condition: service_started
+    volumes:
+      - ./tapir-analyse-listchecker/:/work:ro
+    networks:
+      - core

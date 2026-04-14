@@ -68,6 +68,8 @@ async def check_observation(subject, domain, expected):
     except Exception as e:
         raise e
 
+    await nc.drain()
+
 async def handle_observation(obsJSON, domain, expected):
     obs = json.loads(obsJSON)
 
@@ -103,9 +105,45 @@ def test_looptest():
     asyncio.run(send_event(event, subject, thumbprint))
     asyncio.run(check_observation("core-integration-test.out", domain, expected_obs))
 
-def test_looptest():
+def test_new_qname():
     domain = "example.xa"
     expected_obs = 1
+
+    event = gen_event(domain)
+    subject = "core-integration-test.events.new_qname"
+    thumbprint = "thumbprint1"
+
+    asyncio.run(send_event(event, subject, thumbprint))
+    asyncio.run(check_observation("core-integration-test.out", domain, expected_obs))
+
+def test_registry_investigation():
+    # Might be flaky since this new_qname event causes two analysts to
+    # fire at once, thus triggering two observation messages to be sent
+    # out by the observation encoder. Most of the time, the messages
+    # seem to be identical, but this is not guaranteed.
+    #
+    # In the future, the observation encoder should buffer a number of
+    # messages before sending them out in order to prevent multiple
+    # outgoing messages with similar contents to be sent out in
+    # scenarios where multiple analysts set observation flags
+    # simultaneously.
+
+    domain = "example.com"
+    expected_obs = 9
+
+    event = gen_event(domain)
+    subject = "core-integration-test.events.new_qname"
+    thumbprint = "thumbprint1"
+
+    asyncio.run(send_event(event, subject, thumbprint))
+    asyncio.run(check_observation("core-integration-test.out", domain, expected_obs))
+
+def test_registry_investigation_single():
+    # .org domains should be filtered in the new_qname analysts, thus
+    # only the registry_investigation flag should be set during this
+    # test.
+    domain = "example.org"
+    expected_obs = 8
 
     event = gen_event(domain)
     subject = "core-integration-test.events.new_qname"

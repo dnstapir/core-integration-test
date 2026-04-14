@@ -14,10 +14,9 @@ ttl = 10
 name = "looptest"
 ttl = 5
 
+[[nats.buckets]]
+name = "registry_investigation"
+ttl = 20
+
 [api]
 active = false
-address = "127.0.0.1"
-port = "10001"
-
-[libtapir]
-debug = true

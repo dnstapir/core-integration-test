@@ -1,5 +1,5 @@
 debug = true
-ignore_suffixes = ["looptest.dnstapir.se"]
+ignore_suffixes = ["looptest.dnstapir.se", "org"]
 
 [nats]
 debug = true
