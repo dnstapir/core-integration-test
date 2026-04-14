@@ -56,6 +56,24 @@ async def send_event(event, subject, thumbprint):
 
     await nc.publish(subject, event.to_json().encode('UTF-8'), headers = headers)
 
+async def check_observation(subject, domain, expected):
+    nc = await nats.connect(servers="localhost:4222")
+
+    sub = await nc.subscribe(subject)
+
+    try:
+        async for msg in sub.messages:
+            await handle_observation(msg.data.decode(), domain, expected)
+            await sub.unsubscribe()
+    except Exception as e:
+        raise e
+
+async def handle_observation(obsJSON, domain, expected):
+    obs = json.loads(obsJSON)
+
+    assert obs["added"][0]["name"] == domain
+    assert obs["added"][0]["tag_mask"] == expected
+
 
 #######################################################################
 ############# SOME SANITY TESTS #######################################
@@ -66,7 +84,6 @@ def test_true():
 def test_to_json_and_back():
     event = gen_event("leon.xa.")
     eventJSON = event.to_json()
-    print(eventJSON)
     eventCopy = NewQnameEvent.from_json(eventJSON)
 
     assert event == eventCopy
@@ -75,8 +92,24 @@ def test_to_json_and_back():
 ############# SOME REAL TESTS #########################################
 #######################################################################
 
-def test_send():
-    event = gen_event("leon.xa.")
+def test_looptest():
+    domain = "test.from-edge.looptest.dnstapir.se"
+    expected_obs = 1024
+
+    event = gen_event(domain)
     subject = "core-integration-test.events.new_qname"
     thumbprint = "thumbprint1"
+
     asyncio.run(send_event(event, subject, thumbprint))
+    asyncio.run(check_observation("core-integration-test.out", domain, expected_obs))
+
+def test_looptest():
+    domain = "example.xa"
+    expected_obs = 1
+
+    event = gen_event(domain)
+    subject = "core-integration-test.events.new_qname"
+    thumbprint = "thumbprint1"
+
+    asyncio.run(send_event(event, subject, thumbprint))
+    asyncio.run(check_observation("core-integration-test.out", domain, expected_obs))
