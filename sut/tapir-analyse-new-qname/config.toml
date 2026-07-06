@@ -1,5 +1,6 @@
 debug = true
 ignore_suffixes = ["looptest.dnstapir.se", "org"]
+include_invalid_etlds = true
 
 [nats]
 debug = true
