@@ -12,7 +12,7 @@ seen_domains_subject_prefix = "core-integration-test.internal.seen-domains"
 
 [[nats.observation_buckets]]
 observation = "globally_new"
-name = "globally_new"
+name = "globally_new_bucket"
 create = false
 ttl = 10
 

@@ -9,7 +9,7 @@ event_subject = "core-integration-test.events.new_qname"
 observation_subject_prefix = "core-integration-test.observations"
 
 [[nats.observation_buckets]]
-name = "looptest"
+name = "looptest_bucket"
 observation = "looptest"
 ttl = 10
 create = false

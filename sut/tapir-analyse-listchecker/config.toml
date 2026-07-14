@@ -12,7 +12,7 @@ event_subject = "core-integration-test.events.new_qname"
 observation_subject_prefix = "core-integration-test.observations"
 
 [[nats.observation_buckets]]
-name = "registry_investigation"
+name = "registry_investigation_bucket"
 observation = "registry_investigation"
 ttl = 20
 create = false # A "false" setting requires bucket to be pre-provisioned
