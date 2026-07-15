@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 docker pull ghcr.io/dnstapir/observation-encoder:latest
 docker pull ghcr.io/dnstapir/tapir-analyse-listchecker:latest
