@@ -6,18 +6,23 @@ url = "nats://nats:4222"
 subject_southbound = "core-integration-test.out"
 observation_subject_prefix = "core-integration-test.observations"
 
-[[nats.buckets]]
-name = "globally_new"
+[[nats.observation_buckets]]
+name = "globally_new_bucket"
+observation = "globally_new"
 ttl = 10
+create = true
 
-[[nats.buckets]]
-name = "looptest"
+[[nats.observation_buckets]]
+name = "looptest_bucket"
+observation = "looptest"
 ttl = 5
+create = true
+
+[[nats.observation_buckets]]
+name = "registry_investigation_bucket"
+observation = "registry_investigation"
+ttl = 20
+create = true
 
 [api]
 active = false
-address = "127.0.0.1"
-port = "10001"
-
-[libtapir]
-debug = true

@@ -1,0 +1,18 @@
+debug = true
+interval = 0
+list_url = "go:///testdata/examples.txt"
+observation = "registry_investigation" # Observation to be set when a domain is found on the list 
+use_bloom = false
+unique_id = "integration-test-1"
+
+[nats]
+debug = true
+url = "nats://nats:4222"
+event_subject = "core-integration-test.events.new_qname"
+observation_subject_prefix = "core-integration-test.observations"
+
+[[nats.observation_buckets]]
+name = "registry_investigation_bucket"
+observation = "registry_investigation"
+ttl = 20
+create = false # A "false" setting requires bucket to be pre-provisioned

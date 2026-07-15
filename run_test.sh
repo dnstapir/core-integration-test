@@ -7,7 +7,7 @@ echo "### Setting up test containers..."
 docker compose -f sut/docker-compose.yaml up -d
 
 echo "### Running tests..."
-pytest
+pytest -v
 echo "### Done running tests!"
 
 echo "### Shutting down test containers..."
