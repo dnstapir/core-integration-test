@@ -56,7 +56,11 @@ async def send_event(event, subject, thumbprint):
             "DNSTAPIR-Key-Thumbprint": thumbprint
     }
 
-    await nc.publish(subject, event.to_json().encode('UTF-8'), headers = headers)
+    try:
+        await nc.publish(subject, event.to_json().encode('UTF-8'), headers = headers)
+        await nc.flush()
+    finally:
+        await nc.drain()
 
 async def check_observation(subject, domain, expected):
     nc = await nats.connect(servers="localhost:4222")
@@ -64,7 +68,7 @@ async def check_observation(subject, domain, expected):
     sub = await nc.subscribe(subject)
 
     try:
-        async for msg in sub.messages:
+            msg = await sub.next_msg(timeout=10)
             await handle_observation(msg.data.decode(), domain, expected)
             await sub.unsubscribe()
     except Exception as e:
@@ -96,7 +100,8 @@ def test_to_json_and_back():
 ############# SOME REAL TESTS #########################################
 #######################################################################
 
-def test_looptest():
+@pytest.mark.asyncio
+async def test_looptest():
     domain = "test.from-edge.looptest.dnstapir.se"
     expected_obs = 1024
 
@@ -104,10 +109,11 @@ def test_looptest():
     subject = "core-integration-test.events.new_qname"
     thumbprint = "thumbprint1"
 
-    asyncio.run(send_event(event, subject, thumbprint))
-    asyncio.run(check_observation("core-integration-test.out", domain, expected_obs))
+    await send_event(event, subject, thumbprint)
+    await check_observation("core-integration-test.out", domain, expected_obs)
 
-def test_new_qname():
+@pytest.mark.asyncio
+async def test_new_qname():
     domain = "example.xa"
     expected_obs = 1
 
@@ -115,11 +121,12 @@ def test_new_qname():
     subject = "core-integration-test.events.new_qname"
     thumbprint = "thumbprint1"
 
-    asyncio.run(send_event(event, subject, thumbprint))
-    asyncio.run(check_observation("core-integration-test.out", domain, expected_obs))
+    await send_event(event, subject, thumbprint)
+    await check_observation("core-integration-test.out", domain, expected_obs)
 
 @pytest.mark.skip
-def test_registry_investigation():
+@pytest.mark.asyncio
+async def test_registry_investigation():
     # Might be flaky since this new_qname event causes two analysts to
     # fire at once, thus triggering two observation messages to be sent
     # out by the observation encoder. Most of the time, the messages
@@ -138,10 +145,11 @@ def test_registry_investigation():
     subject = "core-integration-test.events.new_qname"
     thumbprint = "thumbprint1"
 
-    asyncio.run(send_event(event, subject, thumbprint))
-    asyncio.run(check_observation("core-integration-test.out", domain, expected_obs))
+    await send_event(event, subject, thumbprint)
+    await check_observation("core-integration-test.out", domain, expected_obs)
 
-def test_registry_investigation_single():
+@pytest.mark.asyncio
+async def test_registry_investigation_single():
     # .org domains should be filtered in the new_qname analysts, thus
     # only the registry_investigation flag should be set during this
     # test.
@@ -152,5 +160,5 @@ def test_registry_investigation_single():
     subject = "core-integration-test.events.new_qname"
     thumbprint = "thumbprint1"
 
-    asyncio.run(send_event(event, subject, thumbprint))
-    asyncio.run(check_observation("core-integration-test.out", domain, expected_obs))
+    await send_event(event, subject, thumbprint)
+    await check_observation("core-integration-test.out", domain, expected_obs)
