@@ -2,6 +2,7 @@ import asyncio
 from dataclasses import dataclass
 import json
 import datetime
+import uuid
 
 import nats
 
@@ -49,32 +50,30 @@ def gen_event(domain):
     return NewQnameEvent(qname=domain, timestamp=timestamp)
 
 
-async def send_event(event, subject, thumbprint):
-    nc = await nats.connect(servers="localhost:4222")
-
-    headers = {
-            "DNSTAPIR-Key-Thumbprint": thumbprint
-    }
-
-    try:
-        await nc.publish(subject, event.to_json().encode('UTF-8'), headers = headers)
+async def send_event_and_check(
+    event, event_subject, thumbprint, observation_subject, domain, expected
+):
+    # The observation subject is a plain NATS subject, so the server drops
+    # messages published to it while nobody is subscribed. Subscribe and flush
+    # before publishing the input event, otherwise a fast analyst can emit the
+    # observation before the subscription reaches the server and next_msg()
+    # times out on a system that is working correctly.
+    #
+    # Using the client as a context manager closes the connection on every exit
+    # path, including a failure in subscribe() or flush() before the publish.
+    async with await nats.connect(servers="localhost:4222") as nc:
+        sub = await nc.subscribe(observation_subject)
         await nc.flush()
-    finally:
-        await nc.drain()
 
-async def check_observation(subject, domain, expected):
-    nc = await nats.connect(servers="localhost:4222")
+        headers = {
+                "DNSTAPIR-Key-Thumbprint": thumbprint
+        }
 
-    sub = await nc.subscribe(subject)
+        await nc.publish(event_subject, event.to_json().encode('UTF-8'), headers = headers)
+        await nc.flush()
 
-    try:
-            msg = await sub.next_msg(timeout=10)
-            await handle_observation(msg.data.decode(), domain, expected)
-            await sub.unsubscribe()
-    except Exception as e:
-        raise e
-
-    await nc.drain()
+        msg = await sub.next_msg(timeout=10)
+        await handle_observation(msg.data.decode(), domain, expected)
 
 async def handle_observation(obsJSON, domain, expected):
     obs = json.loads(obsJSON)
@@ -109,20 +108,36 @@ async def test_looptest():
     subject = "core-integration-test.events.new_qname"
     thumbprint = "thumbprint1"
 
-    await send_event(event, subject, thumbprint)
-    await check_observation("core-integration-test.out", domain, expected_obs)
+    await send_event_and_check(
+        event,
+        subject,
+        thumbprint,
+        "core-integration-test.out",
+        domain,
+        expected_obs,
+    )
 
 @pytest.mark.asyncio
 async def test_new_qname():
-    domain = "example.xa"
+    # The new_qname analyst records seen names in a JetStream bucket that has
+    # no TTL, so a fixed name only yields an observation on the first run
+    # against a given NATS instance. Use a fresh name each time so the test
+    # does not depend on the bucket being empty.
+    domain = f"example-{uuid.uuid4().hex}.xa"
     expected_obs = 1
 
     event = gen_event(domain)
     subject = "core-integration-test.events.new_qname"
     thumbprint = "thumbprint1"
 
-    await send_event(event, subject, thumbprint)
-    await check_observation("core-integration-test.out", domain, expected_obs)
+    await send_event_and_check(
+        event,
+        subject,
+        thumbprint,
+        "core-integration-test.out",
+        domain,
+        expected_obs,
+    )
 
 @pytest.mark.skip
 @pytest.mark.asyncio
@@ -145,8 +160,14 @@ async def test_registry_investigation():
     subject = "core-integration-test.events.new_qname"
     thumbprint = "thumbprint1"
 
-    await send_event(event, subject, thumbprint)
-    await check_observation("core-integration-test.out", domain, expected_obs)
+    await send_event_and_check(
+        event,
+        subject,
+        thumbprint,
+        "core-integration-test.out",
+        domain,
+        expected_obs,
+    )
 
 @pytest.mark.asyncio
 async def test_registry_investigation_single():
@@ -160,5 +181,11 @@ async def test_registry_investigation_single():
     subject = "core-integration-test.events.new_qname"
     thumbprint = "thumbprint1"
 
-    await send_event(event, subject, thumbprint)
-    await check_observation("core-integration-test.out", domain, expected_obs)
+    await send_event_and_check(
+        event,
+        subject,
+        thumbprint,
+        "core-integration-test.out",
+        domain,
+        expected_obs,
+    )
