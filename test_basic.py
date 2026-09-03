@@ -57,24 +57,22 @@ async def send_event_and_check(
     # before publishing the input event, otherwise a fast analyst can emit the
     # observation before the subscription reaches the server and next_msg()
     # times out on a system that is working correctly.
-    nc = await nats.connect(servers="localhost:4222")
+    #
+    # Using the client as a context manager closes the connection on every exit
+    # path, including a failure in subscribe() or flush() before the publish.
+    async with await nats.connect(servers="localhost:4222") as nc:
+        sub = await nc.subscribe(observation_subject)
+        await nc.flush()
 
-    sub = await nc.subscribe(observation_subject)
-    await nc.flush()
+        headers = {
+                "DNSTAPIR-Key-Thumbprint": thumbprint
+        }
 
-    headers = {
-            "DNSTAPIR-Key-Thumbprint": thumbprint
-    }
-
-    try:
         await nc.publish(event_subject, event.to_json().encode('UTF-8'), headers = headers)
         await nc.flush()
 
         msg = await sub.next_msg(timeout=10)
         await handle_observation(msg.data.decode(), domain, expected)
-    finally:
-        await sub.unsubscribe()
-        await nc.drain()
 
 async def handle_observation(obsJSON, domain, expected):
     obs = json.loads(obsJSON)
