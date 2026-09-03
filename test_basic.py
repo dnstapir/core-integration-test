@@ -49,32 +49,32 @@ def gen_event(domain):
     return NewQnameEvent(qname=domain, timestamp=timestamp)
 
 
-async def send_event(event, subject, thumbprint):
+async def send_event_and_check(
+    event, event_subject, thumbprint, observation_subject, domain, expected
+):
+    # The observation subject is a plain NATS subject, so the server drops
+    # messages published to it while nobody is subscribed. Subscribe and flush
+    # before publishing the input event, otherwise a fast analyst can emit the
+    # observation before the subscription reaches the server and next_msg()
+    # times out on a system that is working correctly.
     nc = await nats.connect(servers="localhost:4222")
+
+    sub = await nc.subscribe(observation_subject)
+    await nc.flush()
 
     headers = {
             "DNSTAPIR-Key-Thumbprint": thumbprint
     }
 
     try:
-        await nc.publish(subject, event.to_json().encode('UTF-8'), headers = headers)
+        await nc.publish(event_subject, event.to_json().encode('UTF-8'), headers = headers)
         await nc.flush()
+
+        msg = await sub.next_msg(timeout=10)
+        await handle_observation(msg.data.decode(), domain, expected)
     finally:
+        await sub.unsubscribe()
         await nc.drain()
-
-async def check_observation(subject, domain, expected):
-    nc = await nats.connect(servers="localhost:4222")
-
-    sub = await nc.subscribe(subject)
-
-    try:
-            msg = await sub.next_msg(timeout=10)
-            await handle_observation(msg.data.decode(), domain, expected)
-            await sub.unsubscribe()
-    except Exception as e:
-        raise e
-
-    await nc.drain()
 
 async def handle_observation(obsJSON, domain, expected):
     obs = json.loads(obsJSON)
@@ -109,8 +109,14 @@ async def test_looptest():
     subject = "core-integration-test.events.new_qname"
     thumbprint = "thumbprint1"
 
-    await send_event(event, subject, thumbprint)
-    await check_observation("core-integration-test.out", domain, expected_obs)
+    await send_event_and_check(
+        event,
+        subject,
+        thumbprint,
+        "core-integration-test.out",
+        domain,
+        expected_obs,
+    )
 
 @pytest.mark.asyncio
 async def test_new_qname():
@@ -121,8 +127,14 @@ async def test_new_qname():
     subject = "core-integration-test.events.new_qname"
     thumbprint = "thumbprint1"
 
-    await send_event(event, subject, thumbprint)
-    await check_observation("core-integration-test.out", domain, expected_obs)
+    await send_event_and_check(
+        event,
+        subject,
+        thumbprint,
+        "core-integration-test.out",
+        domain,
+        expected_obs,
+    )
 
 @pytest.mark.skip
 @pytest.mark.asyncio
@@ -145,8 +157,14 @@ async def test_registry_investigation():
     subject = "core-integration-test.events.new_qname"
     thumbprint = "thumbprint1"
 
-    await send_event(event, subject, thumbprint)
-    await check_observation("core-integration-test.out", domain, expected_obs)
+    await send_event_and_check(
+        event,
+        subject,
+        thumbprint,
+        "core-integration-test.out",
+        domain,
+        expected_obs,
+    )
 
 @pytest.mark.asyncio
 async def test_registry_investigation_single():
@@ -160,5 +178,11 @@ async def test_registry_investigation_single():
     subject = "core-integration-test.events.new_qname"
     thumbprint = "thumbprint1"
 
-    await send_event(event, subject, thumbprint)
-    await check_observation("core-integration-test.out", domain, expected_obs)
+    await send_event_and_check(
+        event,
+        subject,
+        thumbprint,
+        "core-integration-test.out",
+        domain,
+        expected_obs,
+    )
