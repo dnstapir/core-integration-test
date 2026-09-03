@@ -2,6 +2,7 @@ import asyncio
 from dataclasses import dataclass
 import json
 import datetime
+import uuid
 
 import nats
 
@@ -118,7 +119,11 @@ async def test_looptest():
 
 @pytest.mark.asyncio
 async def test_new_qname():
-    domain = "example.xa"
+    # The new_qname analyst records seen names in a JetStream bucket that has
+    # no TTL, so a fixed name only yields an observation on the first run
+    # against a given NATS instance. Use a fresh name each time so the test
+    # does not depend on the bucket being empty.
+    domain = f"example-{uuid.uuid4().hex}.xa"
     expected_obs = 1
 
     event = gen_event(domain)
