@@ -13,6 +13,12 @@ ttl = 10
 create = true
 
 [[nats.observation_buckets]]
+name = "multi_new_bucket"
+observation = "multi_new"
+ttl = 10
+create = true
+
+[[nats.observation_buckets]]
 name = "looptest_bucket"
 observation = "looptest"
 ttl = 5
