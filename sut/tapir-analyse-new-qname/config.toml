@@ -16,6 +16,12 @@ name = "globally_new_bucket"
 create = false
 ttl = 10
 
+[[nats.observation_buckets]]
+observation = "multi_new"
+name = "multi_new_bucket"
+create = false
+ttl = 10
+
 [nats.seen_domains_bucket]
 name = "seen_domains"
 create = true
