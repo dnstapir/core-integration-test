@@ -1,0 +1,12 @@
+debug = true
+
+[nats]
+url = "nats://nats:4222"
+tag_subject_prefix = "core-integration-test.tags"
+
+[nats.tag_bucket]
+name = "tag_bucket"
+create = true
+
+[api]
+active = false
