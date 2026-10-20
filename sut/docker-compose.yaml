@@ -32,6 +32,18 @@ services:
     networks:
       - core
 
+  tag-manager:
+    image: ${TAPIR_INTEGRATION_TAG_MANAGER_IMG:-ghcr.io/dnstapir/tag-manager:latest}
+    working_dir: /work
+    restart: no
+    depends_on:
+      nats:
+        condition: service_healthy
+    volumes:
+      - ./tag-manager/:/work:ro
+    networks:
+      - core
+
   tapir-analyse-looptest:
     image: ${TAPIR_INTEGRATION_LOOPTEST_IMG:-ghcr.io/dnstapir/tapir-analyse-looptest:latest}
     working_dir: /work
@@ -40,6 +52,8 @@ services:
       nats:
         condition: service_healthy
       observation-encoder:
+        condition: service_started
+      tag-manager:
         condition: service_started
     volumes:
       - ./tapir-analyse-looptest/:/work:ro
@@ -54,6 +68,8 @@ services:
       nats:
         condition: service_healthy
       observation-encoder:
+        condition: service_started
+      tag-manager:
         condition: service_started
     volumes:
       - ./tapir-analyse-new-qname/:/work:ro
@@ -82,6 +98,8 @@ services:
       nats:
         condition: service_healthy
       observation-encoder:
+        condition: service_started
+      tag-manager:
         condition: service_started
     volumes:
       - ./tapir-analyse-listchecker/:/work:ro
