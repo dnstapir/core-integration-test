@@ -60,6 +60,20 @@ services:
     networks:
       - core
 
+  tapir-analyse-qtype-dist:
+    image: ${TAPIR_INTEGRATION_QTYPE_DIST_IMG:-ghcr.io/dnstapir/tapir-analyse-qtype-dist:latest}
+    working_dir: /work
+    restart: no
+    depends_on:
+      nats:
+        condition: service_healthy
+      observation-encoder:
+        condition: service_started
+    volumes:
+      - ./tapir-analyse-qtype-dist/:/work:ro
+    networks:
+      - core
+
   tapir-analyse-listchecker:
     image: ${TAPIR_INTEGRATION_LISTCHECKER_IMG:-ghcr.io/dnstapir/tapir-analyse-listchecker:latest}
     working_dir: /work
