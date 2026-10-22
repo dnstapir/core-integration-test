@@ -19,7 +19,7 @@ tag_subject_prefix = "core-integration-test.tags"
 name = "tag_bucket"
 
 [nats.private_bucket]
-name = "private_tapir-analyse-qtype-dist"
+name = "tapir-analyse-qtype-dist_bucket"
 create = true
 ttl = 100000
 
