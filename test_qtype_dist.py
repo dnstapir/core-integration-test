@@ -106,8 +106,6 @@ async def publish_event(nc, domain: str, qtype: int):
 ############# TESTS ###################################################
 #######################################################################
 
-
-
 @pytest.mark.asyncio
 async def test_qtype_dist_counter():
     # A fresh registrable domain each run, so its counters start at zero
