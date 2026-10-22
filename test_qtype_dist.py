@@ -11,7 +11,7 @@ import pytest
 from nats.js.errors import KeyNotFoundError, KeyWrongLastSequenceError
 
 # From the analyst's NATS config:
-PRIVATE_BUCKET = "private_tapir-analyse-qtype-dist"  # private_bucket.name
+PRIVATE_BUCKET = "tapir-analyse-qtype-dist_bucket"  # private_bucket.name
 PRIVATE_PREFIX = "core-integration-test.service.tapir-analyse-qtype-dist"  # private_subject_prefix
 EVENT_SUBJECT = "core-integration-test.events.new_qname"
 THUMBPRINT = "thumbprint1"
