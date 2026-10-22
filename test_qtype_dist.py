@@ -8,7 +8,7 @@ import nats
 
 import pytest
 
-from nats.js.errors import KeyNotFoundError
+from nats.js.errors import KeyNotFoundError, KeyWrongLastSequenceError
 
 # From the analyst's NATS config:
 PRIVATE_BUCKET = "private_tapir-analyse-qtype-dist"  # private_bucket.name
@@ -66,6 +66,27 @@ def gen_event(domain, qtype):
 
 def flip(domain: str) -> str:
     return ".".join(reversed(domain.strip(".").lower().split(".")))
+
+
+async def cas_increment(kv, key: str):
+    """Increment a counter with compare-and-swap, the same protocol as the analyst."""
+    while True:
+        try:
+            entry = await kv.get(key)
+            cur, rev = int(entry.value.decode()), entry.revision
+        except KeyNotFoundError:
+            cur, rev = 0, 0  # last=0 means "only if the key doesn't exist"
+        try:
+            await kv.update(key, str(cur + 1).encode(), last=rev)
+            return
+        except KeyWrongLastSequenceError:
+            await asyncio.sleep(0)  # lost the race, re-read and retry
+
+
+async def hammer(kv, keys, n: int):
+    for _ in range(n):
+        for k in keys:
+            await cas_increment(kv, k)
 
 
 async def read_counter(kv, key: str) -> int:
@@ -168,3 +189,54 @@ async def test_qtype_dist_bare_tld(tld):
 
         for k, v in before.items():
             assert await read_counter(kv, k) == v, f"bare TLD '{tld}' was counted at {k}"
+
+
+@pytest.mark.asyncio
+async def test_qtype_dist_counter_contention():
+    # Analyst events and the test's own writes hit the same two keys concurrently.
+    # With correct compare-and-swap no increment is lost, so the totals are exact.
+    etld_plus_one = f"{uuid.uuid4().hex}.se"
+    date = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d")
+
+    n_events = 100
+    n_hammers = 2
+    n_each = 50  # increments per hammer, per key
+    external = n_hammers * n_each
+
+    shared_keys = [
+        counter_key(date, etld_plus_one, TEST_QTYPE),
+        counter_key(date, etld_plus_one, "total"),
+    ]
+    global_qtype_key = counter_key(date, "global", TEST_QTYPE)
+    global_total_key = counter_key(date, "global", "total")
+
+    async with await nats.connect(servers="localhost:4222") as nc:
+        kv = await nc.jetstream().key_value(PRIVATE_BUCKET)
+
+        keys = shared_keys + [global_qtype_key, global_total_key]
+        before = {k: await read_counter(kv, k) for k in keys}
+
+        async def publisher():
+            for _ in range(n_events):
+                await publish_event(nc, f"{uuid.uuid4().hex}.{etld_plus_one}", TEST_QTYPE)
+
+        await asyncio.gather(
+            publisher(),
+            *[hammer(kv, shared_keys, n_each) for _ in range(n_hammers)],
+        )
+
+        # Wait until the analyst has caught up (everything it counts + our writes)
+        expected = n_events + external
+        for k in shared_keys:
+            await wait_for_counter(kv, k, before[k] + expected, timeout=30)
+        await wait_for_counter(kv, global_qtype_key, before[global_qtype_key] + n_events, timeout=30)
+        await wait_for_counter(kv, global_total_key, before[global_total_key] + n_events, timeout=30)
+        await asyncio.sleep(0.5)  # give any over-counting a chance to show up
+
+        # Contended keys: exactly our increments plus the analyst's
+        for k in shared_keys:
+            assert await read_counter(kv, k) == before[k] + expected, f"{k}: lost or extra increments"
+
+        # Only the analyst writes the global qtype counter
+        assert await read_counter(kv, global_qtype_key) == before[global_qtype_key] + n_events
+        # global.total may also be hit by other traffic, so only >= is safe (waited for above)
