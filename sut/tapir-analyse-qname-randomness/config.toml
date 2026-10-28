@@ -1,0 +1,17 @@
+debug = true
+model_path = "./models/se_min8_k1_model.json"
+threshold = -4
+tag = "seemingly_random"
+
+[nats]
+debug = true
+url = "nats://nats:4222"
+event_subject = "core-integration-test.events.new_qname"
+observation_subject_prefix = "core-integration-test.observations"
+tag_subject_prefix = "core-integration-test.tags"
+
+[nats.tag_bucket]
+name = "tag_bucket"
+
+[api]
+active = false
