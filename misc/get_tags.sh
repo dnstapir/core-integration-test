@@ -7,7 +7,7 @@ tags=(
 )
 
 domain="foo.bar"
-message="foobookee"
+value="foobookee"
 
 # Get a list of well-defined tags
 curl localhost:8080/well-defined/tags

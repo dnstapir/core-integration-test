@@ -1,6 +1,11 @@
 debug = true
+interval = 60
 api_addr = "0.0.0.0:8080"
 api_test_key = "TEST_KEY"
+
+#[[api_users]]
+#name = "alice"
+#key_sha256 = "7e5ab9ff2b7e988c5316a63a235c4486ae4eb7c19b5a67a368baaaddc00e4e57"
 
 [nats]
 url = "nats://nats:4222"

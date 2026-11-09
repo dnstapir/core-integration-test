@@ -41,8 +41,8 @@ async def post_tag(api, kv, auth):
     """POST a tag through the API and purge it from the bucket after the test."""
     created = []
 
-    async def _post(domain, tag, message=None, tag_class="custom"):
-        body = {"message": message} if message is not None else {}
+    async def _post(domain, tag, value=None, tag_class="custom"):
+        body = {"value": value} if value is not None else {}
         resp = await api.post(f"/domains/{domain}/tags/{tag}", json=body, headers=auth)
         assert resp.status_code == 201, resp.text
         created.append((domain, tag, tag_class))
@@ -89,10 +89,10 @@ def unique():
 @pytest.mark.asyncio
 async def test_post_tag_is_stored_in_bucket(api, kv, auth, unique):
     tag, domain, flipped = unique
-    message = "pytest was here"
+    value = "pytest was here"
 
     resp = await api.post(
-        f"/domains/{domain}/tags/{tag}", json={"message": message}, headers=auth
+        f"/domains/{domain}/tags/{tag}", json={"value": value}, headers=auth
     )
     assert resp.status_code == 201, resp.text
 
@@ -100,8 +100,8 @@ async def test_post_tag_is_stored_in_bucket(api, kv, auth, unique):
     assert key is not None, f"no key ending in tags.custom.{tag}.{flipped}"
 
     entry = await kv.get(key)
-    # The stored encoding may differ from the raw message, so check containment.
-    assert message in entry.value.decode()
+    # The stored encoding may differ from the raw value, so check containment.
+    assert value in entry.value.decode()
 
     await kv.purge(key)  # clean up, tags have no TTL
 
@@ -112,7 +112,7 @@ async def test_post_normalizes_domain(api, kv, auth, unique):
 
     # Uppercase plus trailing dot should end up as the lowercase flipped domain
     resp = await api.post(
-        f"/domains/{domain.upper()}./tags/{tag}", json={"message": "x"}, headers=auth
+        f"/domains/{domain.upper()}./tags/{tag}", json={"value": "x"}, headers=auth
     )
     assert resp.status_code == 201, resp.text
 
@@ -127,7 +127,7 @@ async def test_post_then_read_back_through_api(api, kv, auth, unique):
     tag, domain, flipped = unique
 
     r = await api.post(
-        f"/domains/{domain}/tags/{tag}", json={"message": "hello"}, headers=auth
+        f"/domains/{domain}/tags/{tag}", json={"value": "hello"}, headers=auth
     )
     assert r.status_code == 201, r.text
 
@@ -153,12 +153,12 @@ async def test_post_then_read_back_through_api(api, kv, auth, unique):
 async def test_post_without_key_is_rejected(api, kv, unique):
     tag, domain, flipped = unique
 
-    resp = await api.post(f"/domains/{domain}/tags/{tag}", json={"message": "nope"})
+    resp = await api.post(f"/domains/{domain}/tags/{tag}", json={"value": "nope"})
     assert resp.status_code == 401
 
     resp = await api.post(
         f"/domains/{domain}/tags/{tag}",
-        json={"message": "nope"},
+        json={"value": "nope"},
         headers={"X-API-Key": "definitely-wrong"},
     )
     assert resp.status_code == 401
@@ -171,7 +171,7 @@ async def test_post_without_key_is_rejected(api, kv, unique):
 @pytest.mark.parametrize("tag", ["custom", "well-defined"])
 async def test_reserved_tag_names_are_rejected(api, auth, tag):
     resp = await api.post(
-        "/domains/example.com/tags/" + tag, json={"message": "x"}, headers=auth
+        "/domains/example.com/tags/" + tag, json={"value": "x"}, headers=auth
     )
     assert resp.status_code == 422
 
@@ -342,6 +342,25 @@ async def test_post_with_empty_body_stores_empty_value(api, auth, post_tag):
     assert resp.json()["value"] == ""
 
 
+@pytest.mark.asyncio
+async def test_post_without_body_stores_empty_value(api, kv, auth):
+    domain, tag = rand_domain(), rand_tag()
+
+    # No json= / content= at all: no body and no Content-Type header
+    resp = await api.post(f"/domains/{domain}/tags/{tag}", headers=auth)
+
+    try:
+        assert resp.status_code == 201, resp.text
+
+        resp = await api.get(f"/domains/{domain}/tags/{tag}", headers=auth)
+        assert resp.status_code == 200
+        assert resp.json()["value"] == ""
+    finally:
+        key = await find_key(kv, tag, flip(domain))
+        if key:
+            await kv.purge(key)
+
+
 # ---------- input validation (rejected before touching NATS) ----------
 
 @pytest.mark.asyncio
@@ -361,10 +380,10 @@ async def test_get_validation_errors(api, auth, path):
 
 
 @pytest.mark.asyncio
-async def test_post_message_too_long_is_rejected(api, auth):
+async def test_post_value_too_long_is_rejected(api, auth):
     resp = await api.post(
         f"/domains/{rand_domain()}/tags/{rand_tag()}",
-        json={"message": "x" * 101},
+        json={"value": "x" * 101},
         headers=auth,
     )
     assert resp.status_code == 422
@@ -373,6 +392,6 @@ async def test_post_message_too_long_is_rejected(api, auth):
 @pytest.mark.asyncio
 async def test_post_invalid_tag_is_rejected(api, auth):
     resp = await api.post(
-        f"/domains/{rand_domain()}/tags/Bad_Tag", json={"message": "x"}, headers=auth
+        f"/domains/{rand_domain()}/tags/Bad_Tag", json={"value": "x"}, headers=auth
     )
     assert resp.status_code == 422
