@@ -1,4 +1,6 @@
 debug = true
+api_addr = "0.0.0.0:8080"
+api_test_key = "TEST_KEY"
 
 [nats]
 url = "nats://nats:4222"
