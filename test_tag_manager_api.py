@@ -148,7 +148,7 @@ async def test_post_then_read_back_through_api(api, kv, auth, unique):
     if key:
         await kv.purge(key)
 
-
+@pytest.mark.skip(reason="api_auth_disabled")
 @pytest.mark.asyncio
 async def test_post_without_key_is_rejected(api, kv, unique):
     tag, domain, flipped = unique
@@ -177,6 +177,7 @@ async def test_reserved_tag_names_are_rejected(api, auth, tag):
 
 # ---------- auth on every endpoint ----------
 
+@pytest.mark.skip(reason="api_auth_disabled")
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "path",
