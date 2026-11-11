@@ -43,6 +43,8 @@ services:
       - ./tag-manager/:/work:ro
     networks:
       - core
+    ports:
+      - "8080:8080"
 
   tapir-analyse-looptest:
     image: ${TAPIR_INTEGRATION_LOOPTEST_IMG:-ghcr.io/dnstapir/tapir-analyse-looptest:latest}
