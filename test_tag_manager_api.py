@@ -80,7 +80,7 @@ def auth():
 def unique():
     """A unique custom tag and domain per test, so runs never collide."""
     suffix = uuid.uuid4().hex[:8]
-    tag = f"pytest-{suffix}"                   # matches ^[a-z0-9_-]+$, <= 30 chars
+    tag = f"pytest-{suffix}"                   # matches ^[a-z0-9_-]+$, <= 60 chars
     domain = f"{suffix}.example.com"
     flipped = ".".join(reversed(domain.split(".")))   # com.example.<suffix>
     return tag, domain, flipped
@@ -369,10 +369,10 @@ async def test_post_without_body_stores_empty_value(api, kv, auth):
     "path",
     [
         "/tags/UPPERCASE/domains",              # tag pattern
-        f"/tags/{'a' * 31}/domains",            # tag maxLength 30
+        f"/tags/{'a' * 61}/domains",            # tag maxLength 60
         "/domains/exa mple.com/tags",           # domain pattern
         "/domains/example.com/tags/UPPER",      # tag pattern
-        f"/domains/example.com/tags/{'a' * 31}",
+        f"/domains/example.com/tags/{'a' * 61}",
     ],
 )
 async def test_get_validation_errors(api, auth, path):
