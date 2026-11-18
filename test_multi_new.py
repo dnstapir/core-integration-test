@@ -12,7 +12,7 @@ EVENT_SUBJECT = "core-integration-test.events.new_qname"
 OBSERVATION_SUBJECT = "core-integration-test.out"
 SLD = "multi-new.xa"
 THRESHOLD = 4
-WINDOW = 10
+WINDOW = 2 # smaller than default for testing, see config
 
 # tag_mask the analyst emits when the threshold is crossed.
 EXPECTED_BELOW_THRESHOLD_TAG_MASK = 1 # globally_new (1)
@@ -65,7 +65,7 @@ async def test_below_threshold_no_observation():
 
         await publish_from_edges(nc, domain, edges=THRESHOLD-1)
 
-        added = await observations_for(sub, domain, window=2)
+        added = await observations_for(sub, domain, window=1)
 
     masks = [a["tag_mask"] for a in added]
     assert len(added) == 1, f"unexpected number of observations for below-threshold: {len(added)}"
@@ -82,7 +82,7 @@ async def test_above_threshold_observation():
 
         await publish_from_edges(nc, domain, edges=THRESHOLD)
 
-        added = await observations_for(sub, domain, window=2)
+        added = await observations_for(sub, domain, window=1)
         assert len(added) == 2, f"unexpected number of observations for above threshold: {len(added)}"
         assert added[-1]["tag_mask"] == EXPECTED_ABOVE_THRESHOLD_TAG_MASK
 
@@ -95,9 +95,9 @@ async def test_outside_window_no_observation():
         sub = await nc.subscribe(OBSERVATION_SUBJECT)
         await nc.flush()
 
-        await publish_from_edges(nc, domain, edges=THRESHOLD, delay=WINDOW+2) # sleep between 1st and 2nd edge
+        await publish_from_edges(nc, domain, edges=THRESHOLD, delay=WINDOW+1) # sleep between 1st and 2nd edge
 
-        added = await observations_for(sub, domain, window=2)
+        added = await observations_for(sub, domain, window=1)
 
     assert len(added) == 1, f"unexpected number of observations for outside-window: {len(added)}"
     masks = [a["tag_mask"] for a in added]
@@ -114,7 +114,7 @@ async def test_duplicates_no_observation():
 
         await publish_from_edges(nc, domain, edges=THRESHOLD, dupes=True)
 
-        added = await observations_for(sub, domain, window=2)
+        added = await observations_for(sub, domain, window=1)
 
     assert len(added) == 1, f"unexpected number of observations for duplicates: {len(added)}"
     masks = [a["tag_mask"] for a in added]

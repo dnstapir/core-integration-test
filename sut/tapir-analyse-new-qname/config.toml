@@ -1,6 +1,8 @@
 debug = true
 ignore_suffixes = ["looptest.dnstapir.se", "org"]
 include_invalid_etlds = true
+multi_new_threshold = 4 # same as default
+multi_new_window = "2s" # smaller for testing
 
 [nats]
 debug = true
