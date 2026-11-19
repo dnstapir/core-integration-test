@@ -1,13 +1,21 @@
 debug = true
-tags = ["internal_testing", "my_custom_tag"]
-observation = "DNS_TUNNELING"
+tags = ["tag1", "tag2"]
+observation = "dns_tunnel" # must exist in lib/common/observations.go
 allow_custom = true
+#dry_run = true
 
 [nats]
 debug = true
 url = "nats://nats:4222"
 event_subject = "core-integration-test.events.new_qname"
+observation_subject_prefix = "core-integration-test.observations"
 tag_subject_prefix = "core-integration-test.tags"
+
+[[nats.observation_buckets]]
+observation = "dns_tunnel"
+name = "dns_tunnel_bucket"
+create = false
+ttl = 10
 
 [nats.tag_bucket]
 name = "tag_bucket"
