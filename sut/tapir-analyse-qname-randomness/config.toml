@@ -2,6 +2,8 @@ debug = true
 model_path = "./models/se_min8_k1_model.json"
 threshold = -4
 tag = "seemingly_random"
+ignore_suffixes = ["looptest.dnstapir.se"]
+min_label_length = 8
 
 [nats]
 debug = true
