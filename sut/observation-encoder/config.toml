@@ -30,5 +30,11 @@ observation = "registry_investigation"
 ttl = 20
 create = true
 
+[[nats.observation_buckets]]
+name = "dns_tunnel_bucket"
+observation = "dns_tunnel"
+ttl = 10
+create = true
+
 [api]
 active = false

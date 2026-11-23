@@ -78,6 +78,22 @@ services:
     networks:
       - core
 
+  tapir-analyse-tag-aggregator:
+    image: ${TAPIR_INTEGRATION_TAG_AGGREGATOR_IMG:-ghcr.io/dnstapir/tapir-analyse-tag-aggregator:latest}
+    working_dir: /work
+    restart: no
+    depends_on:
+      nats:
+        condition: service_healthy
+      observation-encoder:
+        condition: service_started
+      tag-manager:
+        condition: service_started
+    volumes:
+      - ./tapir-analyse-tag-aggregator/:/work:ro
+    networks:
+      - core
+
   tapir-analyse-qtype-dist:
     image: ${TAPIR_INTEGRATION_QTYPE_DIST_IMG:-ghcr.io/dnstapir/tapir-analyse-qtype-dist:latest}
     working_dir: /work
